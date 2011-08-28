@@ -1,0 +1,38 @@
+html(lang="en")
+	head
+		title valstream
+	script(type="text/javascript", src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js")
+	script(type="text/javascript", src="http://documentcloud.github.com/underscore/underscore-min.js")
+	script(type="text/javascript", src="/swag.js")
+	
+	body
+	#heading
+		h1 valstream
+	#content
+		#roomList
+
+		#thisRoomStats
+			#genRoomData 	
+				//num users, num djs, mods 
+			#videoLists
+
+				#roomHistory
+					#playlist-template(style="display:none;")
+						.playlistContainer
+				
+				#valsRecs
+					#playlist-template(style='display:none;')
+						.playlistContainer
+					//optional - another playlist, to
+					//differentiate b/w curated + VAL's original suggestions
+				
+				#valSuggested
+					#playlist-template(style='display:none;')
+						.playlistContainer			
+			
+			#forms
+				textArea#vidInput(rows='15', cols='37', wrap='physical')
+				//input(type='submit',value='send')
+	#footer
+	
+	

@@ -28,7 +28,7 @@ app.get('/', function(req, res){
 			// 	console.log('fetching room from redis, name: '+roomId)
 			// });
 			console.log(rooms);
-			res.render('index');
+			res.render('index', {rooms: rooms});
 		}
 	});	
 });
@@ -37,6 +37,6 @@ app.get('/', function(req, res){
 
 
 
-app.listen('8080');
+app.listen(4000);
 
 

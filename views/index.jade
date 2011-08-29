@@ -9,8 +9,11 @@ html(lang="en")
 	#heading
 		h1 valstream
 	#content
-		#roomList
-
+		select(size=40)#roomList
+			each room in rooms
+				option= room
+		button#deleteRoomButton Delete Room
+		button#changeRoomNameButton Rename Room
 		#thisRoomStats
 			#genRoomData 	
 				//num users, num djs, mods 

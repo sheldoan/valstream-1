@@ -3,6 +3,7 @@ html(lang="en")
 		title valstream
 	script(type="text/javascript", src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js")
 	script(type="text/javascript", src="http://documentcloud.github.com/underscore/underscore-min.js")
+	script(type="text/javascript", src="/socket.io/socket.io.js")
 	script(type="text/javascript", src="/swag.js")
 	
 	body
@@ -12,8 +13,10 @@ html(lang="en")
 		select(size=40)#roomList
 			each room in rooms
 				option= room
-		button#deleteRoomButton Delete Room
-		button#changeRoomNameButton Rename Room
+		button#deleteRoomButton Delete Room (not implemented yet)
+		button#changeRoomNameButton Rename Room (not implemented yet)
+
+		select(size=40)#VALsList
 		#thisRoomStats
 			#genRoomData 	
 				//num users, num djs, mods 
@@ -34,8 +37,8 @@ html(lang="en")
 						.playlistContainer			
 			
 			#forms
-				textArea#vidInput(rows='15', cols='37', wrap='physical')
-				//input(type='submit',value='send')
+				input#vidInput(rows='15', cols='37', wrap='physical')
+				button#addVideo Add Video By ID
 	#footer
 	
 	

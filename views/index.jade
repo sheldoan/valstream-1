@@ -6,22 +6,34 @@ html(lang="en")
 	script(type="text/javascript", src="/socket.io/socket.io.js")
 	script(type="text/javascript", src="/swag.js")
 	
+	link(rel='stylesheet', href='/stylesheets/style.css')
 	body
 	#heading
 		h1 valstream
 	#content
-		select(size=40)#roomList
-			each room in rooms
-				option= room
+		#rooms.selectMenu
+			h3 rooms
+			select(size=40)#roomList.roomSelect
+				each room in rooms
+					option= room
+			button#delRmBtn -
 
-		select(size=40)#VALsList
-		
+		#listsForRoom
+			#history.selectMenu
+				h3 history
+				select(size=40)#roomHistory.videoSelect
+				//button#delFromHistBtn -
+			
+			#val.selectMenu
+				h3 val
+				select(size=40)#VALsList.videoSelect
+				//button#delFromValBtn -
+
 		#roomButtons
-			button#delRmBtn Delete Room
-			button#renameRmBtn Rename Room
-		
 			input#roomInput 
 			button#addRmBtn Add Room
+			button#renameRmBtn Rename Selected
+		
 
 		#search
 			input#vidInput(rows='15', cols='37', wrap='physical')

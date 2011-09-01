@@ -17,14 +17,15 @@ io.configure(function () {
 //------------------------------------------------------
 
 app.configure(function(){
-	app.set('views', __dirname + '/views');
+  app.set('views', __dirname + '/views');
   app.set('view engine', 'jade');
 	app.set('view options', {layout:false});
   app.use(express.bodyParser());
   app.use(express.methodOverride());
-  app.use(express.cookieParser());
-  app.use(express.session({ secret: "dklfj83298fhds" }));
+  app.use(require('stylus').middleware({ src: __dirname + '/public' }));
   app.use(app.router);
+  app.use(express.static(__dirname + '/public'));
+
 });
 
 app.get('/*.(js|css)', function(req, res){
@@ -63,17 +64,23 @@ io.sockets.on('connection', function(socket) {
 		})
 	})
 	
-	socket.on("room:getVALPlaylist", function(data) {
+	socket.on("room:getListsForRoom", function(data) {
 		var rID = data.room;
 		if (redisClient) {
 			redisClient.lrange("room:" + rID + ":val:playlist",0,-1, function(err, reply) {
 				if (err) {
 					console.log("Error trying to fetch VALs playlist: " + err);
 				} else {
-					console.log("Got VALs List: " + reply)
+					//console.log("Got VALs List: " + reply)
 					socket.emit("val:playlistResults", reply);
 				}
 			});
+			
+			redisClient.lrange('room:'+rID+':history', 0, -1, function(err, reply) {
+				if(err) return;
+				
+				socket.emit('room:history', reply);
+			})
 		}
 	});
 	
@@ -124,7 +131,19 @@ io.sockets.on('connection', function(socket) {
 	});
 	
 	socket.on('room:add', function(room) {
-		redisClient.
+		if(roomMgr.hasRoom(room)) {
+			console.log('[socket] [room:add] ERROR! room already exists')
+			return;
+		}
+		redisClient.rpush('rooms', room, function(err, reply) {
+			if(err) return;
+			
+			roomMgr.addRoom(room);
+			var message = postMan.packRoomAdd(room);
+			redisClient.publish('admin', message, function(err, numClients) {
+				console.log('...pubsub sent, numClients listening: '+numClients);
+			});
+		})
 	})
 	
 	socket.on('room:delete', function(room) { 
@@ -147,6 +166,13 @@ io.sockets.on('connection', function(socket) {
 					else 
 						console.log('...uh oh, tried deleting room info from redis, but didn\'t')
 				});
+				
+				redisClient.del('room:'+room+':val:playlist', function(err, reply) {
+					if(reply > 0)
+						console.log('...also cleared val\'s playlist from redis, reply: '+reply)
+					else
+						console.log('...tried deleting val\'s playlist from redis, reply: '+reply)
+				});
 			} else {
 				console.log('...no room found!')
 			}
@@ -155,9 +181,13 @@ io.sockets.on('connection', function(socket) {
 	});
 	
 	socket.on('room:rename', function(data) {
+		data = JSON.parse(data);
 		console.log('\nreceived request to rename room: '+ data.oldName + ' to: ' + data.newName)
+		
 		var oldName = data.oldName;
 		var newName = data.newName;
+		
+		if(!oldName || !newName) return;
 		
 		if(roomMgr.hasRoom(newName)) {
 			console.log('...room with '+newName+' already exists! [return]')
@@ -168,29 +198,46 @@ io.sockets.on('connection', function(socket) {
 			if(err) return;
 			
 			if(rem > 0) {
-				console.log('...deleted old room, moving room info to new room')
-				redisClient.rename('room:'+oldName, 'room:'+newName);
+				console.log('...deleted old room from rooms list, moving room info to new room')
+				redisClient.rpush('rooms', newName);
+				redisClient.rename('room:'+oldName, 'room:'+newName, function(err, reply) {
+					if(err) {
+						console.log("error in renaming room: "+err);
+						return;
+					}
+				});
+				redisClient.rename('room:'+oldName+':val:playlist', 'room:'+newName+':val:playlist', function(err, reply) {
+					if(err) {
+						console.log("error in renaming val playlist: "+err);
+						return;
+					}
+				})
+				redisClient.rename('room:'+oldName+':history', 'room:'+newName+':history', function(err, reply) {
+					if(err) {
+						console.log("error in renaming room history: "+err);
+						return;
+					}
+				});
+				
+				var message = postMan.packRoomRename(oldName, newName);
+				redisClient.publish('admin', message, function(err, numClients) {
+					console.log('...pubsub sent, numClients listening: '+numClients);
+				});
+				roomMgr.refreshRooms();
 			}
 		})
-		// var message = postMan.packDeleteRoomMsg(oldName, newName);
-		// redisClient.publish('admin', message, function(err, numClients) {
-		// 	console.log('...pubsub sent, numClients listening: '+numClients);
-		// });	
 	});
 	
 	socket.on('room:addVideos', function(data) {
 		if(!data) return;
-		
-		console.log('received request to add videos: '+data+' to room: '+'room:'+room+':val:playlist')
+
 		data = JSON.parse(data);
-		
-		console.log('video length: '+data.videos.length)
 		var room = data.room;
+		console.log('received request to add videos: '+data+' to room: '+'room:'+room+':val:playlist')
 		
 		multi = redisClient.multi();
 		for(var i=0; i < data.videos.length; i++) {
 			var video = data.videos[i];
-			console.log('video: '+JSON.stringify(video))
 			if(video.id && video.title && video.duration && video.thumb && video.author) {
 				multi.rpush('room:'+room+':val:playlist', JSON.stringify(video));
 			}
@@ -202,6 +249,16 @@ io.sockets.on('connection', function(socket) {
 		});
 	})
 
+
+	socket.on('history:deleteVideo', function(data) {
+		console.log('received request to delete video from history')
+		if(!data) return;
+		data = JSON.parse(data);
+		
+		redisClient.lrem('room:'+data.room+':history', 0, data.video, function(err, rem) {
+			if(rem > 0) console.log('...success! deleted video from history: '+rem)
+		})
+	})
 });
 
 

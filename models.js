@@ -11,17 +11,22 @@
 
 	models.PubSubPostMan = Backbone.Model.extend({
 		packRoomRename: function(oldName, newName) {
-			var message = {};
-
-			message.oldName = oldName;
-			message.newName = newName;
-			message.type = 'room:rename';
+			var message = {
+				oldName: oldName,
+				newName: newName,
+				type: 'room:rename'
+			}
 
 			return JSON.stringify(message);
 		},
 
 		packRoomDelete: function(room) {
 			var message = { room: room, type: 'room:delete' };
+			return JSON.stringify(message);
+		},
+		
+		packRoomAdd: function(room) {
+			var message = { room: room, type: 'room:add' };
 			return JSON.stringify(message);
 		}
 	});
@@ -33,6 +38,7 @@
 		},
 
 		refreshRooms: function() { 
+			this.roomMap = {};
 			var mgr = this;
 			console.log('[RoomManager] refreshRooms(): refreshing...')
 			redisClient.lrange('rooms',0,-1, function(err, rooms) {
@@ -43,11 +49,26 @@
 				}
 			});
 		},
+		
+		addRoom: function(room) {
+			if(!this.hasRoom(room))
+				this.roomMap[room] = new models.Room({ room: room });
+		},
 
 		hasRoom: function(room) {
 			if(this.roomMap[room]) return true;
 			return false;
 		},
+		
+		removeRoom: function(room) {
+			if(this.roomMap[room]) {
+				delete this.roomMap[room];
+				console.log('[RoomManager] removeRoom(): successfully removed room: '+room)
+				return true;
+			}
+			return false;
+		}
 	});
 	
+	models.Video = Backbone.Model.extend({});
 }) ()

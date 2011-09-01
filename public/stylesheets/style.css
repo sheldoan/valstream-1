@@ -1,0 +1,18 @@
+#rooms {
+  float: left;
+  width: 200px;
+}
+.roomSelect {
+  width: 190;
+}
+#roomButtons {
+  float: left;
+}
+#history,
+#val {
+  float: left;
+  width: 300px;
+}
+.videoSelect {
+  width: 275px;
+}

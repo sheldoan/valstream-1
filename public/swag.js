@@ -3,16 +3,27 @@ $(function() {
 	socket = io.connect();
 	
 	$("#roomList").change(function(data){
-		socket.emit("room:getVALPlaylist", {room: data.srcElement.value});
-	})
-	
-	socket.on("val:playlistResults", function(response) {
-		$("#VALsList").empty();
-		for (var x in response) {
-			$("#VALsList").append($("<option></option>").attr("value",response[x]).text(response[x]));
-		}
-		
+		socket.emit("room:getListsForRoom", {room: data.srcElement.value});
 	});
+	
+	socket.on("val:playlistResults", function(videos) {
+		$("#VALsList").empty();
+		for (var index in videos) {
+			var currVideo = videos[index];
+			currVideo = JSON.parse(currVideo);
+			console.log('adding '+currVideo.title)
+			$("#VALsList").append($("<option></option>").attr("value",JSON.stringify(currVideo)).text(currVideo.title));
+		}
+	});
+	
+	socket.on('room:history', function(videos) {
+		$('#roomHistory').empty();
+		for(var index in videos) {
+			var currVideo = videos[index];
+			currVideo = JSON.parse(currVideo);
+			$("#roomHistory").append($('<option></option>').attr('value',JSON.stringify(currVideo)).text(currVideo.title))
+		}
+	})
 	
 	$("#addVideo").click(function() {
 		socket.emit("room:addToVALPlaylist", 
@@ -32,7 +43,7 @@ $(function() {
 		//	options are relevance, published, viewCount, rating
 		//													^reverse chronological order
 		var ytUrl = 'http://gdata.youtube.com/feeds/api/users/' + channel 
-			+ '/uploads?v=2&alt=jsonc&max-results='+RESULTS_PER_PAGE
+			+ '/uploads?v=2&alt=jsonc&format=5&max-results='+RESULTS_PER_PAGE
 		
 		$.ajax({
 			url: ytUrl,
@@ -65,7 +76,7 @@ $(function() {
 	})
 	
 	$('#addRmBtn').click(function() {
-		var room = $('#roomList').val();
+		var room = $('#roomInput').val();
 		socket.emit('room:add', room);
 	})
 	
@@ -75,7 +86,39 @@ $(function() {
 	});
 	
 	$('#renameRmBtn').click(function() {
+		var message = {};
+		message.oldName = $('#roomList').val();
+		message.newName = $('#roomInput').val();
 		
+		console.log('renaming '+message.oldName + ' to '+message.newName);
+		socket.emit('room:rename', JSON.stringify(message));
 	});
 	
+	
+	$('#delFromHistBtn').click(function() {
+		var room = $('#roomList').val();
+		console.log('room: '+room)
+		if(!room) return;
+		var videoToDel = $('#roomHistory :selected').attr('value');
+
+		console.log('deleting from history '+videoToDel)
+		var message = {
+			room: room,
+			video: videoToDel
+		};
+		socket.emit('history:deleteVideo', JSON.stringify(message));
+	});
+	
+	$('#delFromValBtn').click(function() {
+		var room = $('#roomList').val();
+		if(!room) return;
+		var videoToDel = $('#VALsList :selected').attr('value');
+
+		var message = {
+			room: room,
+			video: videoToDel
+		};
+		socket.emit('val:deleteVideo', JSON.stringify(message));
+		
+	});
 });

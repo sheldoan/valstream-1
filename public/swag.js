@@ -32,6 +32,39 @@ $(function() {
 			});
 	});
 	
+	$('#addVideosFromPlaylist').click(function() {
+		var playlist = $('#vidInput').val();
+		
+		var ytUrl = 'https://gdata.youtube.com/feeds/api/playlists/'+playlist+'?v=2&alt=jsonc&max-results=50'
+		
+		$.ajax({
+			url: ytUrl,
+			dataType: 'json',
+			success: function(data, textStatus) { 
+				//alert('data: '+JSON.stringify(data))
+				var data = data['data'];
+				var totalUploads = data['totalItems'],
+					startIndex = data['startIndex'];
+					
+				var videoResults = data['items'];	//array
+				var videosToAdd = [];
+				for(var i=0; i < videoResults.length; i++) {
+					videosToAdd.push({
+						id: videoResults[i]['video']['id'],
+						title: videoResults[i]['video']['title'],
+						duration: videoResults[i]['video']['duration'],
+						author: videoResults[i]['video']['uploader'],
+						thumb: videoResults[i]['video']['thumbnail']['sqDefault'],
+					});
+				}
+				var message = {};
+				message.videos = videosToAdd;
+				message.room = $('#roomList').val();
+				console.log('sending message: '+JSON.stringify(message))
+				socket.emit('room:addVideos', JSON.stringify(message));
+			}
+		});
+	})
 	
 	var RESULTS_PER_PAGE = 50;
 	$('#addChannel').click(function() {

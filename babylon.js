@@ -264,6 +264,16 @@ io.sockets.on('connection', function(socket) {
 		redisClient.lrem('room:'+data.room+':history', 0, data.video, function(err, rem) {
 			if(rem > 0) console.log('...success! deleted video from history: '+rem)
 		})
+	});
+	
+	socket.on('val:deleteVideo', function(data) {
+		if(!data) return;
+		data = JSON.parse(data);
+		
+		console.log('trying to delete : '+data.video)
+		redisClient.lrem('room:'+data.room+':val:playlist', 0, data.video, function(err, rem) {
+			if(rem > 0) console.log('...success! deleted video from val\'s playlist:' +rem)
+		})
 	})
 });
 

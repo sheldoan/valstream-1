@@ -147,6 +147,7 @@ $(function() {
 		if(!room) return;
 		var videoToDel = $('#VALsList :selected').attr('value');
 
+		console.log('deleting from history '+videoToDel)
 		var message = {
 			room: room,
 			video: videoToDel

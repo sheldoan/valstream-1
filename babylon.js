@@ -4,7 +4,8 @@ var express = require('express'),
 	redis = require('redis'),
 	redisClient = redis.createClient(),
 	_ = require('underscore')._,
-	Backbone = require('backbone');
+	Backbone = require('backbone'),
+	http = require('http');
 	
 var models = require('./models');
 	
@@ -92,7 +93,7 @@ io.sockets.on('connection', function(socket) {
 		var options = { 
 			host: 'gdata.youtube.com',
 			port: 80,
-			path: '/feeds/api/videos/'+videoId+'?v=2&alt=jsonc'
+			path: '/feeds/api/videos/'+vID+'?v=2&alt=jsonc'
 		};
 		
 		var req = http.request(options, function(res) {
@@ -113,6 +114,14 @@ io.sockets.on('connection', function(socket) {
 					author: videoData['uploader'],
 					duration: videoData['duration'],
 				}
+				
+				redisClient.lpush("room:" + rID + ":val:playlist", JSON.stringify(currVideo),function(err, reply) {
+					if (err) {
+						console.log("Error trying to fetch VALs playlist: " + err);
+					} else {
+						console.log("Added to VALs list: " + reply)
+					}
+				});
 			});
 		});
 
@@ -121,20 +130,16 @@ io.sockets.on('connection', function(socket) {
 		});
 		req.end();
 		
-		redisClient.lpush("room:" + rID + ":val:playlist", vID,function(err, reply) {
-			if (err) {
-				console.log("Error trying to fetch VALs playlist: " + err);
-			} else {
-				console.log("Added to VALs list: " + reply)
-			}
-		});
+		
 	});
 	
 	socket.on('room:add', function(room) {
+		if(!room || room == '') return;
 		if(roomMgr.hasRoom(room)) {
 			console.log('[socket] [room:add] ERROR! room already exists')
 			return;
 		}
+		
 		redisClient.rpush('rooms', room, function(err, reply) {
 			if(err) return;
 			
@@ -149,7 +154,7 @@ io.sockets.on('connection', function(socket) {
 	socket.on('room:delete', function(room) { 
 		console.log('\nreceived request to delete room: '+room);
 	
-		if(!room) return;
+		//if(!room) return;
 		redisClient.lrem('rooms', 0, room, function(err, rem) {
 			if(err) return;
 			
@@ -233,6 +238,7 @@ io.sockets.on('connection', function(socket) {
 
 		data = JSON.parse(data);
 		var room = data.room;
+		if(!room || room == '') return;
 		console.log('received request to add videos: '+data+' to room: '+'room:'+room+':val:playlist')
 		
 		multi = redisClient.multi();

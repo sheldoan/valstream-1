@@ -106,7 +106,12 @@ io.sockets.on('connection', function(socket) {
 			res.on('end', function() {
 				videoData = JSON.parse(videoData);
 				
-				videoData = videoData['data']
+				videoData = videoData['data'];
+				
+				if(videoData['accessControl']['embed'] == 'denied') {
+					console.log("This video cannot be embedded!")
+					return;
+				}
 				var currVideo = {
 					id: videoData['id'],
 					title: videoData['title'],
@@ -159,12 +164,8 @@ io.sockets.on('connection', function(socket) {
 			if(err) return;
 			
 			if(rem > 0) {
-				console.log('...room deleted from room list! # removed (should be 1): '+rem)
-				// var message = postMan.packRoomDelete(room);
-				// 
-				// redisClient.publish('admin', message, function(err, numClients) {
-				// 	console.log('...pubsub sent, numClients listening: '+numClients);
-				// });
+				console.log('...room deleted from room list! # removed (should be 1): '+rem);
+				
 				redisClient.del('room:'+room, function(err, reply) {
 					if(reply > 0) 
 						console.log('...also cleared all room info from redis, reply: '+reply)
@@ -177,6 +178,11 @@ io.sockets.on('connection', function(socket) {
 						console.log('...also cleared val\'s playlist from redis, reply: '+reply)
 					else
 						console.log('...tried deleting val\'s playlist from redis, reply: '+reply)
+				});
+				
+				var message = postMan.packRoomDelete(room);
+				redisClient.publish('admin', message, function(err, numClients) {
+					console.log('...pubsub sent, numClients listening: '+numClients);
 				});
 			} else {
 				console.log('...no room found!')

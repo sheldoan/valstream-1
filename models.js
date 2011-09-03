@@ -15,7 +15,7 @@
 				oldName: oldName,
 				newName: newName,
 				type: 'room:rename'
-			}
+			};
 
 			return JSON.stringify(message);
 		},

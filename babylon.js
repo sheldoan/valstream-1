@@ -106,9 +106,10 @@ io.sockets.on('connection', function(socket) {
 			res.on('end', function() {
 				videoData = JSON.parse(videoData);
 				
+				if(!videoData) return;
 				videoData = videoData['data'];
 				
-				if(videoData['accessControl']['embed'] == 'denied') {
+				if(!videoData || !videoData['accessControl'] || videoData['accessControl']['embed'] == 'denied') {
 					console.log("This video cannot be embedded!")
 					return;
 				}

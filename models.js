@@ -25,8 +25,8 @@
 			return JSON.stringify(message);
 		},
 		
-		packRoomAdd: function(room) {
-			var message = { room: room, type: 'room:add' };
+		packRoomAdd: function(roomId, trueName) {
+			var message = { roomId: roomId, trueName: trueName, type: 'room:add' };
 			return JSON.stringify(message);
 		}
 	});

@@ -109,8 +109,11 @@ $(function() {
 	})
 	
 	$('#addRmBtn').click(function() {
-		var room = $('#roomInput').val();
-		socket.emit('room:add', room);
+		var roomName = $('#roomInput').val();
+		roomName = $.trim(roomName);
+		var roomId = roomName.replace(/\s+/g, '-');
+		console.log('>> adding roomId, roomName to add: '+roomId+','+roomName)
+		socket.emit('room:add', { roomId: roomId, roomName: roomName });
 	})
 	
 	$('#delRmBtn').click(function() {

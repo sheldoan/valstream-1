@@ -66,9 +66,9 @@ io.sockets.on('connection', function(socket) {
 	})
 	
 	socket.on("room:getListsForRoom", function(data) {
-		var rID = data.room;
+		var roomName = data.room;
 		if (redisClient) {
-			redisClient.lrange("room:" + rID + ":val:playlist",0,-1, function(err, reply) {
+			redisClient.lrange("room:" + roomName + ":val:playlist",0,-1, function(err, reply) {
 				if (err) {
 					console.log("Error trying to fetch VALs playlist: " + err);
 				} else {
@@ -77,7 +77,7 @@ io.sockets.on('connection', function(socket) {
 				}
 			});
 			
-			redisClient.lrange('room:'+rID+':history', 0, -1, function(err, reply) {
+			redisClient.lrange('room:'+roomName+':history', 0, -1, function(err, reply) {
 				if(err) return;
 				
 				socket.emit('room:history', reply);
@@ -87,8 +87,8 @@ io.sockets.on('connection', function(socket) {
 	
 	//https://gdata.youtube.com/feeds/api/videos/t1IiUAtoNBk?v=2&alt=jsonc
 	socket.on("room:addToVALPlaylist", function(data) {		
-		var rID = data.room, vID = data.video;
-		console.log("pushing to: " + "room:" + rID + ":val:playlist")
+		var roomName = data.room, vID = data.video;
+		console.log("pushing to: " + "room:" + roomName + ":val:playlist")
 		
 		var options = { 
 			host: 'gdata.youtube.com',
@@ -138,18 +138,22 @@ io.sockets.on('connection', function(socket) {
 		
 	});
 	
-	socket.on('room:add', function(room) {
-		if(!room || room == '') return;
-		if(roomMgr.hasRoom(room)) {
+	socket.on('room:add', function(data) { //room is room name
+		if(!data || (data.roomId == '' || !data.roomId)) return;
+		
+		console.log('adding roomId,roomName = '+data.roomId+','+data.roomName)
+		var roomId = data.roomId, 
+			roomName = data.roomName;
+		if(roomMgr.hasRoom(roomId)) {
 			console.log('[socket] [room:add] ERROR! room already exists')
 			return;
 		}
 		
-		redisClient.rpush('rooms', room, function(err, reply) {
+		redisClient.rpush('rooms', roomId, function(err, reply) {
 			if(err) return;
 			
-			roomMgr.addRoom(room);
-			var message = postMan.packRoomAdd(room);
+			roomMgr.addRoom(roomId);
+			var message = postMan.packRoomAdd(roomId, roomName);	
 			redisClient.publish('admin', message, function(err, numClients) {
 				console.log('...pubsub sent, numClients listening: '+numClients);
 			});

@@ -121,7 +121,7 @@ io.sockets.on('connection', function(socket) {
 					duration: videoData['duration'],
 				}
 				
-				redisClient.lpush("room:" + rID + ":val:playlist", JSON.stringify(currVideo),function(err, reply) {
+				redisClient.lpush("room:" + roomName + ":val:playlist", JSON.stringify(currVideo),function(err, reply) {
 					if (err) {
 						console.log("Error trying to fetch VALs playlist: " + err);
 					} else {

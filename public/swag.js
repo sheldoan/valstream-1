@@ -1,5 +1,6 @@
 $(function() {
 	
+	var currValPlaylist = { };
 	socket = io.connect();
 	
 	$("#roomList").change(function(data){
@@ -8,12 +9,19 @@ $(function() {
 	
 	socket.on("val:playlistResults", function(videos) {
 		$("#VALsList").empty();
+		currValPlaylist = {};
 		for (var index in videos) {
 			var currVideo = videos[index];
 			currVideo = JSON.parse(currVideo);
 			console.log('adding '+currVideo.title)
 			$("#VALsList").append($("<option></option>").attr("value",JSON.stringify(currVideo)).text(currVideo.title));
+			
+			var currId = currVideo.id;
+			console.log('currVideoId = '+currId)
+			currValPlaylist[currId] = true;
+			console.log('here it is: '+currValPlaylist[currId])
 		}
+		console.log('here it is: '+JSON.stringify(currValPlaylist))
 	});
 	
 	socket.on('room:history', function(videos) {
@@ -26,10 +34,16 @@ $(function() {
 	})
 	
 	$("#addVideo").click(function() {
-		socket.emit("room:addToVALPlaylist", 
-			{room: $("#roomList option:selected").val(), 
-			 video: $("#vidInput").val()
-			});
+		var videoId = $('#vidInput').val()
+		if(currValPlaylist[videoId]) {
+			console.log("video is already in the list!")
+		} else {
+				socket.emit("room:addToVALPlaylist", 
+					{room: $("#roomList option:selected").val(), 
+					 video: $("#vidInput").val()
+				});
+		}
+	
 	});
 	
 	$('#addVideosFromPlaylist').click(function() {
@@ -62,8 +76,14 @@ $(function() {
 						console.log('video thumb is undefined!!!')
 					}
 					
-					if(id && title && duration && author && thumb) {
+					if(currValPlaylist[id]) {
+						console.log('the playlist already has this video! not adding')
+					} else {
+						console.log('curr val playlist does not have this video')
+					}
+					if(!currValPlaylist[id] && id && title && duration && author && thumb) {
 						console.log('adding video: '+id+' '+title+' '+duration+' '+author+' '+thumb)
+						currValPlaylist[id] == true;
 						videosToAdd.push({
 							id: id,
 							title: title,
@@ -73,6 +93,8 @@ $(function() {
 						});
 					}	
 				}
+				
+				
 				
 				var message = {};
 				message.videos = videosToAdd;

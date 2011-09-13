@@ -49,14 +49,31 @@ $(function() {
 				var videoResults = data['items'];	//array
 				var videosToAdd = [];
 				for(var i=0; i < videoResults.length; i++) {
-					videosToAdd.push({
-						id: videoResults[i]['video']['id'],
-						title: videoResults[i]['video']['title'],
-						duration: videoResults[i]['video']['duration'],
-						author: videoResults[i]['video']['uploader'],
-						thumb: videoResults[i]['video']['thumbnail']['sqDefault'],
-					});
+					var id = videoResults[i]['video']['id'],
+						title = videoResults[i]['video']['title'],
+						duration = videoResults[i]['video']['duration'],
+						author = videoResults[i]['video']['uploader'];
+					//	thumb = videoResults[i]['video']['thumbnail']['sqDefault'];
+					var thumb = 'http://i.ytimg.com/vi/default.jpg';
+					if(videoResults[i]['video']['thumbnail']) {
+						console.log('video thumb: '+videoResults[i]['video']['thumbnail']['sqDefault'])
+						thumb = videoResults[i]['video']['thumbnail']['sqDefault'];
+					} else {
+						console.log('video thumb is undefined!!!')
+					}
+					
+					if(id && title && duration && author && thumb) {
+						console.log('adding video: '+id+' '+title+' '+duration+' '+author+' '+thumb)
+						videosToAdd.push({
+							id: id,
+							title: title,
+							duration: duration,
+							author: author,
+							thumb: thumb
+						});
+					}	
 				}
+				
 				var message = {};
 				message.videos = videosToAdd;
 				message.room = $('#roomList').val();
@@ -156,6 +173,25 @@ $(function() {
 			video: videoToDel
 		};
 		socket.emit('val:deleteVideo', JSON.stringify(message));
+	});
+	
+			// var videoResults = data['items'];	//array
+			// var videosToAdd = [];
+			// for(var i=0; i < videoResults.length; i++) {
+			// 	videosToAdd.push({
+			// 		id: videoResults[i]['id'],
+			// 		title: videoResults[i]['title'],
+			// 		duration: videoResults[i]['duration'],
+			// 		author: channel,
+			// 		thumb: videoResults[i]['thumbnail']['sqDefault'],
+			// 		viewCount: videoResults[i]['viewCount']
+			// 	});
+			// }
+	$("#addReddit").click(function() {
 		
+		socket.emit("room:addVideos", 
+			{room: $("#roomList option:selected").val(), 
+			 video: $("#vidInput").val()
+			});
 	});
 });

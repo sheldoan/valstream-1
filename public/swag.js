@@ -13,15 +13,11 @@ $(function() {
 		for (var index in videos) {
 			var currVideo = videos[index];
 			currVideo = JSON.parse(currVideo);
-			console.log('adding '+currVideo.title)
 			$("#VALsList").append($("<option></option>").attr("value",JSON.stringify(currVideo)).text(currVideo.title));
 			
 			var currId = currVideo.id;
-			console.log('currVideoId = '+currId)
 			currValPlaylist[currId] = true;
-			console.log('here it is: '+currValPlaylist[currId])
 		}
-		console.log('here it is: '+JSON.stringify(currValPlaylist))
 	});
 	
 	socket.on('room:history', function(videos) {
@@ -43,7 +39,6 @@ $(function() {
 					 video: $("#vidInput").val()
 				});
 		}
-	
 	});
 	
 	$('#addVideosFromPlaylist').click(function() {
@@ -210,10 +205,71 @@ $(function() {
 			// 	});
 			// }
 	$("#addReddit").click(function() {
+		var subReddit = $('#subInput').val();
+		var url = "http://www.reddit.com/r/"+subReddit+".json?limit=100";
 		
-		socket.emit("room:addVideos", 
-			{room: $("#roomList option:selected").val(), 
-			 video: $("#vidInput").val()
-			});
+		$.ajax({
+			url: url,
+	    dataType: "jsonp",
+	    jsonp: "jsonp",
+	    success: function(data) {
+        var videos = []
+				console.log('data: '+data)
+        for(var x in data.data.children){
+					var currResult = data.data.children[x].data;
+					//console.log(currResult);
+					if(currResult.domain == "youtube.com" && currResult.media && currResult.media.oembed) {
+						var videoUrl = currResult.media.oembed.url;
+						var videoId = videoUrl.substr(videoUrl.indexOf("v=") + 2);
+						console.log('extracted video id: '+videoId)
+						fetchAndAddVideo(videoId);
+					}
+        }  
+	    },
+	    
+			error: function(jXHR, textStatus, errorThrown) {
+				if(textStatus !== 'abort'){
+					alert('Could not load feed. Is reddit down?');
+				}
+	    }
+		});	//end request
+		
 	});
+	
+	function fetchAndAddVideo(videoId) {
+		var ytUrl = 'http://gdata.youtube.com/feeds/api/videos/'+videoId+'?&alt=jsonc&v=2';
+		if(currValPlaylist[videoId]) {
+			console.log('video already exists in playlist! not adding')
+			return;
+		}
+		$.ajax({
+			url: ytUrl,
+			dataType: 'json',
+			success: function(data, textStatus) { 
+				//alert('data: '+JSON.stringify(data))
+				var videoData = data['data'];
+
+				if(!videoData || !videoData['accessControl'] || videoData['accessControl']['embed'] == 'denied') {
+					console.log("This video cannot be embedded!")
+					return;
+				}
+				var currVideo = {
+					id: videoData['id'],
+					title: videoData['title'],
+					thumb: videoData['thumbnail']['sqDefault'],
+					author: videoData['uploader'],
+					duration: videoData['duration'],
+				}
+				currValPlaylist[videoId] = true;
+				
+				console.log('sending video to add to server: '+JSON.stringify(currVideo))
+				var videos = [];
+				videos.push(currVideo);
+				var message = {}
+				message.videos = videos;
+				message.room = $('#roomList').val();
+				socket.emit('room:addVideos', JSON.stringify(message))
+			}
+		});
+	}
 });

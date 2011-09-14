@@ -250,7 +250,7 @@ io.sockets.on('connection', function(socket) {
 		data = JSON.parse(data);
 		var room = data.room;
 		if(!room || room == '') return;
-		console.log('received request to add videos: '+data+' to room: '+'room:'+room+':val:playlist')
+		console.log('received request to add videos: '+JSON.stringify(data)+' to room: '+'room:'+room+':val:playlist')
 		
 		multi = redisClient.multi();
 		for(var i=0; i < data.videos.length; i++) {

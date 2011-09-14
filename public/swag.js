@@ -206,7 +206,7 @@ $(function() {
 			// }
 	$("#addReddit").click(function() {
 		var subReddit = $('#subInput').val();
-		var url = "http://www.reddit.com/r/"+subReddit+".json?limit=100";
+		var url = "http://www.reddit.com/r/"+subReddit+"/search.json?limit=100&q=site%3Ayoutube.com&restrict_sr=on"
 		
 		$.ajax({
 			url: url,

@@ -218,7 +218,7 @@ $(function() {
         for(var x in data.data.children){
 					var currResult = data.data.children[x].data;
 					//console.log(currResult);
-					if(currResult.domain == "youtube.com" && currResult.media && currResult.media.oembed) {
+					if(currResult.domain == "youtube.com" && currResult.media && currResult.media.oembed && currResult.media.oembed.url) {
 						var videoUrl = currResult.media.oembed.url;
 						var videoId = videoUrl.substr(videoUrl.indexOf("v=") + 2);
 						console.log('extracted video id: '+videoId)

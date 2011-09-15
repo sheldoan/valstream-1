@@ -36,8 +36,14 @@ app.get('/*.(js|css)', function(req, res){
 app.get('/', function(req, res){
 	redisClient.lrange('rooms',0,-1, function(err, rooms) {
 		if(rooms) { 
-			console.log(rooms);
-			res.render('index', {rooms: rooms});
+			redisClient.lrange('promo', 0, -1, function(err, promos) {
+				if (promos) {
+					console.log("promos fetched on GET: " + promos);
+					console.log("rooms fetched on GET: " + rooms);
+					res.render('index', {rooms: rooms, promos: promos});
+				}
+			});
+			
 		}
 	});	
 });
@@ -244,7 +250,42 @@ io.sockets.on('connection', function(socket) {
 		})
 	});
 	
-	socket.on('room:addVideos', function(data) {
+	socket.on("promo:make", function(promoData){
+		var data = promoData;
+		redisClient.rpush("promo", data.promo, function(err, reply) {
+			if(err) {
+				console.log("error making promo code " + data.promo + ": " + err);
+			} else {
+				var dataPack = postMan.packPromoAdd(data.promo);
+				console.log("promo code made: " + data.promo);
+				redisClient.publish('admin', dataPack, function(err, reply){
+					console.log("...pubsub sent for promo code creation: " + data.promo);
+				});
+				socket.emit("promo:made", {promo: data.promo});				 
+			}
+		})
+	});
+	
+	socket.on("promo:delete", function(promoData){
+		var data = promoData;
+		redisClient.lrem("promo", 0, data.promo, function(err, rem) {
+			if(err) {
+				console.log("error deleting promo code " + data.promo + ": " + err);
+			} else {
+				if (rem > 0) {
+					console.log("promo code " + data.promo + " deleted");
+				 
+					var dataPack = postMan.packPromoDelete(data.promo);
+					redisClient.publish('admin', dataPack, function(err, reply){
+						console.log("...pubsub sent for promo code  deletion: " + data.promo);
+					}); 
+					socket.emit("promo:deleted", {promo: data.promo});
+				}
+			}
+		})
+	});
+	
+ 	socket.on('room:addVideos', function(data) {
 		if(!data) return;
 
 		data = JSON.parse(data);

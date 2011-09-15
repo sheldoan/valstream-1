@@ -28,6 +28,16 @@
 		packRoomAdd: function(roomId, trueName) {
 			var message = { roomId: roomId, trueName: trueName, type: 'room:add' };
 			return JSON.stringify(message);
+		},
+		
+		packPromoAdd: function(promoCode) {
+			var message = {promo: promoCode, type: "promo:make"};
+			return JSON.stringify(message);
+		},
+		
+		packPromoDelete: function(promoCode) {
+			var message = {promo: promoCode, type: "promo:delete"};
+			return JSON.stringify(message);
 		}
 	});
 

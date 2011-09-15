@@ -46,6 +46,14 @@ html(lang="en")
 		#reddit
 			input#subInput(rows='15', cols='37', wrap='physical')
 			button#addReddit Add Subreddit
+		br
+		#promo
+			input#promoInput
+			button#addPromo Add Promo Code
+			select#promoList(size=10)
+				each promo in promos
+					option(value=promo)= promo
+			button#deletePromo Delete Selected Promo
 			
 		#footer
 

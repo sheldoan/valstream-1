@@ -7,6 +7,7 @@ $(function() {
 		socket.emit("room:getListsForRoom", {room: data.srcElement.value});
 	});
 	
+	
 	socket.on("val:playlistResults", function(videos) {
 		$("#VALsList").empty();
 		currValPlaylist = {};
@@ -27,7 +28,35 @@ $(function() {
 			currVideo = JSON.parse(currVideo);
 			$("#roomHistory").append($('<option></option>').attr('value',JSON.stringify(currVideo)).text(currVideo.title))
 		}
-	})
+	});
+	
+	socket.on("promo:made", function(data){
+		//add data.promo to promo list
+		$("#promoList").append($("<option></option>").attr("value", data.promo).text(data.promo));
+	});
+	
+	socket.on("promo:deleted", function(data){
+		//remove data.promo from promo list
+		$('#promoList > option[value='+data.promo+']').remove();
+	});
+	
+	$("#addPromo").click(function(){
+		//send promo:make event
+		var promoName = jQuery.trim($("#promoInput").val());
+		if (promoName.length > 0) {
+			socket.emit("promo:make", {promo: promoName});
+		}
+	});
+	
+	$("#deletePromo").click(function(){
+		//send promo:delete event
+		var promoName = $('#promoList :selected').val();
+		if (promoName) {
+			socket.emit("promo:delete", {promo: promoName});
+		} else {
+			console.log('problem sending delete event for promo deletion')
+		}		
+	});
 	
 	$("#addVideo").click(function() {
 		var videoId = $('#vidInput').val()
